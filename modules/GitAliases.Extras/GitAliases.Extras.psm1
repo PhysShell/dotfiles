@@ -145,6 +145,7 @@ function ghash {
     }
 }
 
+function gswc    { git switch -c @args }
 
 # Alias for shorter command
 
@@ -248,4 +249,5 @@ function Register-GitAliasCompletion {
 Register-GitAliasCompletion
 
 # Export all public functions and aliases for use in the shell
+
 Export-ModuleMember -Function * -Alias *
