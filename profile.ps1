@@ -38,4 +38,4 @@ Set-Alias -Name g -Value git -Force
 # It finds all aliases and registers the proxy completer.
 Import-Module GitAliases.Extras -Force -ErrorAction Stop
 
-Write-Host "PowerShell profile loaded. Posh-git and custom alias completion are active." -ForegroundColor Green
+# Write-Host "PowerShell profile loaded. Posh-git and custom alias completion are active." -ForegroundColor Green
