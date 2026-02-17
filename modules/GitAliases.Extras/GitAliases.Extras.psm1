@@ -70,6 +70,59 @@ function Convert-ToPowerShellBranchCompletionText {
     return $BranchName
 }
 
+function Get-GitLongOptionCompletions {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$SubCommand,
+        [Parameter(Mandatory = $true)]
+        [string]$WordToComplete
+    )
+
+    if (-not $WordToComplete.StartsWith('-')) {
+        return @()
+    }
+
+    try {
+        $helpText = git $SubCommand -h 2>&1 | Out-String
+        if (-not $helpText) { return @() }
+
+        $rawTokens = [regex]::Matches($helpText, '--[^\s,]+') |
+                    ForEach-Object { $_.Value } |
+                    Sort-Object -Unique
+
+        $expanded = foreach ($token in $rawTokens) {
+            $clean = $token.Trim().TrimEnd(',', ';')
+            $clean = $clean -replace '<.*$', ''
+
+            if ($clean -match '^--\[no-\](.+)$') {
+                $suffix = $matches[1] -replace '\[.*$', ''
+                if ($suffix) {
+                    "--$suffix"
+                    "--no-$suffix"
+                }
+                continue
+            }
+
+            $clean = $clean -replace '\[.*$', ''
+            if ($clean.StartsWith('--')) {
+                $clean
+            }
+        }
+
+        $options = $expanded |
+                   Sort-Object -Unique |
+                   Where-Object { $_ -like "$WordToComplete*" }
+
+        if (-not $options) { return @() }
+
+        return $options | ForEach-Object {
+            [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterName', $_)
+        }
+    } catch {
+        return @()
+    }
+}
+
 
 # --- Custom Git Command Functions ---
 function UpMerge {
@@ -353,12 +406,21 @@ function Register-GitAliasCompletion {
         if ($gitCursorPosition -lt 0) { $gitCursorPosition = 0 }
         if ($gitCursorPosition -gt $gitLine.Length) { $gitCursorPosition = $gitLine.Length }
 
-        # Use posh-git's official completion function
-        if (Get-Command GitTabExpansion -ErrorAction SilentlyContinue) {
-            try {
-                $results = GitTabExpansion $gitLine $gitCursorPosition
+        # Delegate to native completion for `git <subcommand> ...`.
+        # This preserves completion for long options (e.g. --track, --detach)
+        # and other git-specific argument completion behavior.
+        try {
+            $nativeCompletion = [System.Management.Automation.CommandCompletion]::CompleteInput(
+                $gitLine,
+                $gitCursorPosition,
+                $null
+            )
+            if ($null -ne $nativeCompletion -and
+                $null -ne $nativeCompletion.CompletionMatches -and
+                $nativeCompletion.CompletionMatches.Count -gt 0) {
+                $delegateMatches = @($nativeCompletion.CompletionMatches)
                 if ($subCommand -in @('checkout', 'switch', 'merge', 'rebase', 'branch', 'reset', 'revert')) {
-                    return $results | ForEach-Object {
+                    $delegateMatches = @($nativeCompletion.CompletionMatches | ForEach-Object {
                         if ($null -eq $_) { return }
                         $completionText = $_.CompletionText
                         if ($completionText -is [string] -and $completionText.StartsWith('#')) {
@@ -372,16 +434,40 @@ function Register-GitAliasCompletion {
                         }
 
                         return $_
+                    })
+                }
+
+                if ($wordToComplete -like '-*') {
+                    $optionCompletions = Get-GitLongOptionCompletions -SubCommand $subCommand -WordToComplete $wordToComplete
+                    if ($optionCompletions -and $optionCompletions.Count -gt 0) {
+                        $combined = @()
+                        $seen = @{}
+                        foreach ($item in @($delegateMatches + $optionCompletions)) {
+                            if ($null -eq $item) { continue }
+                            $key = $item.CompletionText
+                            if (-not $seen.ContainsKey($key)) {
+                                $combined += $item
+                                $seen[$key] = $true
+                            }
+                        }
+
+                        return $combined
                     }
                 }
 
-                return $results
-            } catch {
-                Write-Warning "posh-git's GitTabExpansion failed for alias '$commandName'."
+                return $delegateMatches
             }
+        } catch {
+            Write-Warning "Native completion delegation failed for alias '$commandName'."
         }
 
-        # Fallback if posh-git isn't loaded or its function fails
+        # Long option fallback when native completion isn't available.
+        $optionCompletions = Get-GitLongOptionCompletions -SubCommand $subCommand -WordToComplete $wordToComplete
+        if ($optionCompletions -and $optionCompletions.Count -gt 0) {
+            return $optionCompletions
+        }
+
+        # Final fallback when delegated completion is unavailable
         if ($subCommand -in @('checkout', 'switch', 'merge', 'rebase', 'branch', 'reset', 'revert')) {
             try {
                 $branches = git branch -a --format='%(refname:short)' |

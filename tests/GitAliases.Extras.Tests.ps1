@@ -1,5 +1,6 @@
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
+$script:HasGcoAlias = [bool](Get-Command gco -ErrorAction SilentlyContinue)
 
 BeforeAll {
     function Script:Invoke-GitCommand {
@@ -69,7 +70,13 @@ BeforeAll {
     [string]$script:RepoRoot = Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..') |
         Select-Object -ExpandProperty Path -First 1
     $script:ModuleManifest = Join-Path $script:RepoRoot 'modules\GitAliases.Extras\GitAliases.Extras.psd1'
+
+    if (Get-Module -ListAvailable -Name git-aliases) {
+        Import-Module git-aliases -DisableNameChecking -ErrorAction SilentlyContinue
+    }
+
     Import-Module $script:ModuleManifest -Force
+    $script:HasGcoAlias = [bool](Get-Command gco -ErrorAction SilentlyContinue)
 }
 
 AfterAll {
@@ -189,6 +196,34 @@ Describe 'gfp integration' {
 }
 
 Describe 'gsw integration' {
+    It 'completes long options for gsw alias' -Skip:(-not (Get-Command git -ErrorAction SilentlyContinue)) {
+        Push-Location $script:RepoRoot
+        try {
+            $line = 'gsw --'
+            $result = TabExpansion2 -inputScript $line -cursorColumn $line.Length
+        } finally {
+            Pop-Location
+        }
+
+        $result.CompletionMatches.Count | Should -BeGreaterThan 0
+        $completionTexts = @($result.CompletionMatches | Select-Object -ExpandProperty CompletionText)
+        $completionTexts | Should -Contain '--track'
+    }
+
+    It 'completes long options for gco alias from git-aliases module' -Skip:(-not (Get-Command git -ErrorAction SilentlyContinue) -or -not $script:HasGcoAlias) {
+        Push-Location $script:RepoRoot
+        try {
+            $line = 'gco --'
+            $result = TabExpansion2 -inputScript $line -cursorColumn $line.Length
+        } finally {
+            Pop-Location
+        }
+
+        $result.CompletionMatches.Count | Should -BeGreaterThan 0
+        $completionTexts = @($result.CompletionMatches | Select-Object -ExpandProperty CompletionText)
+        $completionTexts | Should -Contain '--detach'
+    }
+
     It 'returns PowerShell-safe completion text for branches starting with # when escaped prefix is used' -Skip:(-not (Get-Command git -ErrorAction SilentlyContinue)) {
         $tempRoot = Join-Path ([IO.Path]::GetTempPath()) ("gsw-complete-" + [guid]::NewGuid().Guid)
         $repoPath = Join-Path $tempRoot 'repo'
