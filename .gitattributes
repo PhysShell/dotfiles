@@ -1,6 +1,11 @@
 # Default: keep text normalized in repo
 * text=auto
 
+# Repo metadata/config files should stay LF
+.gitattributes text eol=lf
+.gitignore text eol=lf
+.editorconfig text eol=lf
+
 # PowerShell scripts: use CRLF in working tree on Windows
 *.ps1  text eol=crlf
 *.psm1 text eol=crlf
@@ -20,3 +25,6 @@
 *.zip  binary
 *.exe  binary
 *.dll  binary
+
+# Git hooks should stay LF for sh compatibility
+tools/hooks/* text eol=lf
