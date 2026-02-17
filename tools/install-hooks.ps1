@@ -17,14 +17,17 @@ $hookDir = if ([IO.Path]::IsPathRooted($gitDir)) {
     Join-Path $root $gitDir 'hooks'
 }
 
-$source = Join-Path $root 'tools\hooks\pre-commit'
-$destination = Join-Path $hookDir 'pre-commit'
-
-if (-not (Test-Path $source)) {
-    throw "Hook source not found: $source"
-}
-
 New-Item -ItemType Directory -Path $hookDir -Force | Out-Null
-Copy-Item -Path $source -Destination $destination -Force
 
-Write-Host "Installed pre-commit hook: $destination"
+$hookNames = @('pre-commit', 'commit-msg')
+foreach ($hookName in $hookNames) {
+    $source = Join-Path $root ("tools\hooks\{0}" -f $hookName)
+    $destination = Join-Path $hookDir $hookName
+
+    if (-not (Test-Path $source)) {
+        throw "Hook source not found: $source"
+    }
+
+    Copy-Item -Path $source -Destination $destination -Force
+    Write-Host ("Installed {0} hook: {1}" -f $hookName, $destination)
+}

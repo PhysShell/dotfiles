@@ -30,15 +30,21 @@ Run only tests:
 .\tools\ci.ps1 -TestOnly
 ```
 
-## Pre-commit hook
+## Commit hooks
 
-Install local git hook:
+Install local git hooks:
 
 ```powershell
 .\tools\install-hooks.ps1
 ```
 
-The hook runs `tools/ci.ps1` before every commit.
+Installed hooks:
+- `pre-commit` (lightweight no-op)
+- `commit-msg` (runs `tools/ci.ps1`)
+
+Checks are skipped when:
+- commit message contains `[skip precommit hook]` or `[skip pch]`
+- there are no working tree changes (for example, `git commit --allow-empty ...`)
 
 ## What CI checks
 
