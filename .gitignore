@@ -1,2 +1,8 @@
 private.ps1
 
+TestResults.xml
+
+# generated patches
+*.patch
+*.mbox
+patches/

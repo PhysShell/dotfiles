@@ -56,6 +56,20 @@ function Test-GitRefExists {
     return ($LASTEXITCODE -eq 0)
 }
 
+function Convert-ToPowerShellBranchCompletionText {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$BranchName
+    )
+
+    if ($BranchName.StartsWith('#')) {
+        $escaped = $BranchName -replace "'", "''"
+        return "'$escaped'"
+    }
+
+    return $BranchName
+}
+
 
 # --- Custom Git Command Functions ---
 function UpMerge {
@@ -156,6 +170,81 @@ function ghash {
     }
 }
 
+function gfp {
+    [CmdletBinding()]
+    param(
+        [Parameter(Position = 0)]
+        [string]$TargetBranch,
+        [Parameter(Position = 1)]
+        [string]$OutputFile = 'series.mbox'
+    )
+
+    if (-not (Test-InGitRepo)) {
+        throw "Not a git repository."
+    }
+
+    $defaultRemote = git config --get checkout.defaultRemote 2>$null
+    if (-not $defaultRemote) { $defaultRemote = 'origin' }
+
+    if (-not $TargetBranch) {
+        if (Test-GitRefExists "refs/remotes/$defaultRemote/main") {
+            $TargetBranch = 'main'
+        } elseif (Test-GitRefExists "refs/remotes/$defaultRemote/master") {
+            $TargetBranch = 'master'
+        } else {
+            $remoteHead = git symbolic-ref --quiet "refs/remotes/$defaultRemote/HEAD" 2>$null
+            if ($LASTEXITCODE -eq 0 -and $remoteHead) {
+                $prefix = "refs/remotes/$defaultRemote/"
+                if ($remoteHead.StartsWith($prefix)) {
+                    $TargetBranch = $remoteHead.Substring($prefix.Length).Trim()
+                }
+            }
+        }
+
+        if (-not $TargetBranch) { $TargetBranch = 'main' }
+    }
+
+    $range = "$defaultRemote/$TargetBranch..HEAD"
+    $resolvedOutput = if ([IO.Path]::IsPathRooted($OutputFile)) {
+        $OutputFile
+    } else {
+        Join-Path (Get-Location) $OutputFile
+    }
+
+    $outputDir = Split-Path -Parent $resolvedOutput
+    if ($outputDir -and -not (Test-Path $outputDir)) {
+        New-Item -ItemType Directory -Path $outputDir -Force | Out-Null
+    }
+
+    $stderrFile = [IO.Path]::GetTempFileName()
+    try {
+        $process = Start-Process -FilePath 'git' `
+            -ArgumentList @('format-patch', '--cover-letter', '--stat', '--stdout', $range) `
+            -NoNewWindow `
+            -PassThru `
+            -Wait `
+            -RedirectStandardOutput $resolvedOutput `
+            -RedirectStandardError $stderrFile
+
+        $stderrText = Get-Content -LiteralPath $stderrFile -Raw -ErrorAction SilentlyContinue
+        if ($stderrText) {
+            $stderrText = $stderrText.Trim()
+            if ($stderrText) {
+                Write-Host $stderrText
+            }
+        }
+
+        if ($process.ExitCode -ne 0) {
+            Remove-Item -LiteralPath $resolvedOutput -Force -ErrorAction SilentlyContinue
+            throw "git format-patch failed for '$range' (exit code: $($process.ExitCode))."
+        }
+
+        return $resolvedOutput
+    } finally {
+        Remove-Item -LiteralPath $stderrFile -Force -ErrorAction SilentlyContinue
+    }
+}
+
 function gsw {
     [CmdletBinding()]
     param(
@@ -224,8 +313,12 @@ function Register-GitAliasCompletion {
         }
     }
 
-    # Add your custom aliases from this module
-    Get-Command -Module GitAliases.Extras -CommandType Function | ForEach-Object {
+    # Add custom aliases from this module without module-name lookups
+    # to avoid self-import recursion during module initialization.
+    $moduleName = $ExecutionContext.SessionState.Module.Name
+    Get-Command -CommandType Function |
+    Where-Object { $_.ModuleName -eq $moduleName } |
+    ForEach-Object {
         $func = $_
         $definition = $func.ScriptBlock.ToString()
         if ($definition -match $aliasRegex) {
@@ -257,11 +350,32 @@ function Register-GitAliasCompletion {
         $gitLine = $line -replace "^$commandName", "git $subCommand"
         $offset = ("git $subCommand").Length - $commandName.Length
         $gitCursorPosition = $cursorPosition + $offset
+        if ($gitCursorPosition -lt 0) { $gitCursorPosition = 0 }
+        if ($gitCursorPosition -gt $gitLine.Length) { $gitCursorPosition = $gitLine.Length }
 
         # Use posh-git's official completion function
         if (Get-Command GitTabExpansion -ErrorAction SilentlyContinue) {
             try {
-                return GitTabExpansion $gitLine $gitCursorPosition
+                $results = GitTabExpansion $gitLine $gitCursorPosition
+                if ($subCommand -in @('checkout', 'switch', 'merge', 'rebase', 'branch', 'reset', 'revert')) {
+                    return $results | ForEach-Object {
+                        if ($null -eq $_) { return }
+                        $completionText = $_.CompletionText
+                        if ($completionText -is [string] -and $completionText.StartsWith('#')) {
+                            $safeText = Convert-ToPowerShellBranchCompletionText -BranchName $completionText
+                            return [System.Management.Automation.CompletionResult]::new(
+                                $safeText,
+                                $_.ListItemText,
+                                $_.ResultType,
+                                $_.ToolTip
+                            )
+                        }
+
+                        return $_
+                    }
+                }
+
+                return $results
             } catch {
                 Write-Warning "posh-git's GitTabExpansion failed for alias '$commandName'."
             }
@@ -276,10 +390,14 @@ function Register-GitAliasCompletion {
                             Where-Object { $_ -like "$wordToComplete*" }
                 if ($branches) {
                     return $branches | ForEach-Object {
-                        [System.Management.Automation.CompletionResult]::new($_, $_, 'ParameterValue', $_)
+                        $branchName = $_
+                        $safeText = Convert-ToPowerShellBranchCompletionText -BranchName $branchName
+                        [System.Management.Automation.CompletionResult]::new($safeText, $branchName, 'ParameterValue', $branchName)
                     }
                 }
-            } catch {}
+            } catch {
+                return @()
+            }
         }
 
         # Return nothing if no completions are found

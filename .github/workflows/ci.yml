@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+
+jobs:
+  windows:
+    name: ${{ matrix.label }}
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: Windows PowerShell 5.1
+            shell: powershell
+          - label: PowerShell 7
+            shell: pwsh
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show PowerShell Version
+        shell: ${{ matrix.shell }}
+        run: |
+          $PSVersionTable.PSVersion.ToString()
+
+      - name: Install Dependencies
+        shell: ${{ matrix.shell }}
+        run: |
+          if ($PSVersionTable.PSEdition -eq 'Desktop') {
+            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+            $userModules = Join-Path $HOME 'Documents\WindowsPowerShell\Modules'
+          } else {
+            $userModules = Join-Path $HOME 'Documents/PowerShell/Modules'
+          }
+          if ($env:PSModulePath -notlike "*$userModules*") {
+            $env:PSModulePath = "$userModules;$env:PSModulePath"
+          }
+          Set-PSRepository PSGallery -InstallationPolicy Trusted
+          Install-Module PSScriptAnalyzer -Scope CurrentUser -Force -AllowClobber
+          Install-Module Pester -Scope CurrentUser -Force -SkipPublisherCheck
+
+      - name: Run Lint and Tests
+        shell: ${{ matrix.shell }}
+        run: |
+          ./tools/ci.ps1

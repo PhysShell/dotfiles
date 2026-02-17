@@ -1,0 +1,20 @@
+#!/bin/sh
+set -e
+
+# Prevent hook-provided Git env vars from leaking into nested temp-repo tests.
+unset GIT_DIR
+unset GIT_WORK_TREE
+unset GIT_INDEX_FILE
+unset GIT_OBJECT_DIRECTORY
+unset GIT_ALTERNATE_OBJECT_DIRECTORIES
+unset GIT_COMMON_DIR
+unset GIT_PREFIX
+
+if command -v pwsh >/dev/null 2>&1; then
+  pwsh -NoProfile -ExecutionPolicy Bypass -File tools/ci.ps1
+elif command -v powershell >/dev/null 2>&1; then
+  powershell -NoProfile -ExecutionPolicy Bypass -File tools/ci.ps1
+else
+  echo "pre-commit: neither pwsh nor powershell is available"
+  exit 1
+fi

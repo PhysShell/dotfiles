@@ -5,8 +5,38 @@ if (Get-Module -ListAvailable -Name PSReadLine) {
     Import-Module PSReadLine -ErrorAction SilentlyContinue
   }
   Set-PSReadLineOption -BellStyle None
+
+  function Protect-HashBranchTokenForCompletion {
+    [string]$line = ''
+    [int]$cursor = 0
+    [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$line, [ref]$cursor)
+
+    if (-not $line -or $cursor -le 0) { return $false }
+    if ($cursor -gt $line.Length) { $cursor = $line.Length }
+
+    $prefix = $line.Substring(0, $cursor)
+    if ($prefix -notmatch '^\s*(?:git\s+switch|gsw)\b') { return $false }
+
+    $tokenStart = $prefix.Length
+    while ($tokenStart -gt 0 -and -not [char]::IsWhiteSpace($prefix[$tokenStart - 1])) {
+      $tokenStart--
+    }
+
+    if ($tokenStart -ge $prefix.Length) { return $false }
+    if ($prefix[$tokenStart] -ne '#') { return $false }
+
+    [Microsoft.PowerShell.PSConsoleReadLine]::Replace($tokenStart, 1, '`#')
+    return $true
+  }
+
   # Use Tab for menu completion and Shift+Tab to go backward.
-  Set-PSReadLineKeyHandler -Key Tab -Function MenuComplete
+  # Workaround: in PowerShell, unescaped '#' starts a comment, so we
+  # auto-escape it for git switch/gsw branch completion.
+  Set-PSReadLineKeyHandler -Key Tab -ScriptBlock {
+    try { Protect-HashBranchTokenForCompletion | Out-Null } catch { Write-Verbose $_ }
+    [Microsoft.PowerShell.PSConsoleReadLine]::MenuComplete()
+    try { Protect-HashBranchTokenForCompletion | Out-Null } catch { Write-Verbose $_ }
+  }
   Set-PSReadLineKeyHandler -Key "Shift+Tab" -Function TabCompletePrevious
 }
 
@@ -36,6 +66,8 @@ Set-Alias -Name g -Value git -Force
 
 # 3. GitAliases.Extras: Your custom module that DEPENDS on posh-git.
 # It finds all aliases and registers the proxy completer.
-Import-Module GitAliases.Extras -Force -ErrorAction Stop
+if (-not (Get-Module -Name GitAliases.Extras -ErrorAction SilentlyContinue)) {
+  Import-Module GitAliases.Extras -ErrorAction Stop
+}
 
 # Write-Host "PowerShell profile loaded. Posh-git and custom alias completion are active." -ForegroundColor Green
