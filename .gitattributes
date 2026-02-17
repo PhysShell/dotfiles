@@ -1,0 +1,22 @@
+# Default: keep text normalized in repo
+* text=auto
+
+# PowerShell scripts: use CRLF in working tree on Windows
+*.ps1  text eol=crlf
+*.psm1 text eol=crlf
+*.psd1 text eol=crlf
+
+# Common text files
+*.md   text eol=lf
+*.yml  text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+
+# Binary files (avoid any conversions)
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.zip  binary
+*.exe  binary
+*.dll  binary
