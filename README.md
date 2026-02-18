@@ -70,6 +70,8 @@ Notes:
 - `bootstrap.ps1` now initializes submodules automatically if `.gitmodules` exists.
 - `profile.ps1` warns with the exact `git submodule update --init --recursive` command if submodules were not initialized.
 
+P.S. You can also install just [GitAliases.Extras](https://github.com/PhysShell/GitAliases.Extras) without dotfiles as standalone powershell package
+
 ## What CI checks
 
 - `PSScriptAnalyzer` linting with `PSScriptAnalyzerSettings.psd1`
