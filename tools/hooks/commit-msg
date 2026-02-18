@@ -1,0 +1,37 @@
+#!/bin/sh
+set -e
+
+message_file="$1"
+if [ -z "$message_file" ] || [ ! -f "$message_file" ]; then
+  echo "commit-msg: missing commit message file"
+  exit 1
+fi
+
+# Allow opt-out tokens in the commit message.
+if grep -Eiq '\[skip[[:space:]]+precommit[[:space:]]+hook\]|\[skip[[:space:]]+pch\]' "$message_file"; then
+  echo "commit-msg: checks skipped by commit message tag"
+  exit 0
+fi
+
+# Skip expensive checks for no-op commits (for example, --allow-empty with no file changes).
+if [ -z "$(git status --porcelain)" ]; then
+  exit 0
+fi
+
+# Prevent hook-provided Git env vars from leaking into nested temp-repo tests.
+unset GIT_DIR
+unset GIT_WORK_TREE
+unset GIT_INDEX_FILE
+unset GIT_OBJECT_DIRECTORY
+unset GIT_ALTERNATE_OBJECT_DIRECTORIES
+unset GIT_COMMON_DIR
+unset GIT_PREFIX
+
+if command -v pwsh >/dev/null 2>&1; then
+  pwsh -NoProfile -ExecutionPolicy Bypass -File tools/ci.ps1
+elif command -v powershell >/dev/null 2>&1; then
+  powershell -NoProfile -ExecutionPolicy Bypass -File tools/ci.ps1
+else
+  echo "commit-msg: neither pwsh nor powershell is available"
+  exit 1
+fi
