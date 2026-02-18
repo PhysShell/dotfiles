@@ -56,8 +56,13 @@ BeforeAll {
 Set-Content -Path '.git/ci-ran' -Value 'ran' -NoNewline -Encoding ascii
 '@ | Set-Content -Path $ciScriptPath -Encoding ascii
 
+        $moduleHooksPath = Join-Path $repoPath 'modules\GitAliases.Extras\tools\hooks'
+        New-Item -ItemType Directory -Path $moduleHooksPath -Force | Out-Null
+        Copy-Item -Path $script:ModulePreCommitHookSource -Destination (Join-Path $moduleHooksPath 'pre-commit') -Force
+        Copy-Item -Path $script:ModuleCommitMsgHookSource -Destination (Join-Path $moduleHooksPath 'commit-msg') -Force
+
         Set-Content -Path (Join-Path $repoPath 'README.md') -Value 'root' -NoNewline -Encoding ascii
-        Invoke-GitForHookTests -RepoPath $repoPath -Arguments @('add', 'README.md', 'tools/ci.ps1') | Out-Null
+        Invoke-GitForHookTests -RepoPath $repoPath -Arguments @('add', '.') | Out-Null
         Invoke-GitForHookTests -RepoPath $repoPath -Arguments @('commit', '-m', 'init') | Out-Null
 
         $hooksPath = Join-Path $repoPath '.git\hooks'
@@ -75,6 +80,8 @@ Set-Content -Path '.git/ci-ran' -Value 'ran' -NoNewline -Encoding ascii
         Select-Object -ExpandProperty Path -First 1
     $script:PreCommitHookSource = Join-Path $script:RepoRoot 'tools\hooks\pre-commit'
     $script:CommitMsgHookSource = Join-Path $script:RepoRoot 'tools\hooks\commit-msg'
+    $script:ModulePreCommitHookSource = Join-Path $script:RepoRoot 'modules\GitAliases.Extras\tools\hooks\pre-commit'
+    $script:ModuleCommitMsgHookSource = Join-Path $script:RepoRoot 'modules\GitAliases.Extras\tools\hooks\commit-msg'
 }
 
 Describe 'commit hooks integration' {

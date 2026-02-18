@@ -1,6 +1,7 @@
 [CmdletBinding()]
 param(
-    [string]$TestsPath = (Join-Path $PSScriptRoot '..\tests')
+    [string]$TestsPath = (Join-Path $PSScriptRoot '..\tests'),
+    [switch]$SkipSubmoduleTests
 )
 
 $ErrorActionPreference = 'Stop'
@@ -14,14 +15,24 @@ Import-Module Pester -MinimumVersion 5.0 -ErrorAction Stop
 [string]$resolvedTestsPath = Resolve-Path -LiteralPath $TestsPath -ErrorAction Stop |
     Select-Object -ExpandProperty Path -First 1
 
+[string]$repoRoot = Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..') |
+    Select-Object -ExpandProperty Path -First 1
+
+$runPaths = @($resolvedTestsPath)
+if (-not $SkipSubmoduleTests) {
+    $submoduleTestsPath = Join-Path $repoRoot 'modules\GitAliases.Extras\tests'
+    if (Test-Path -LiteralPath $submoduleTestsPath) {
+        $runPaths += (Resolve-Path -LiteralPath $submoduleTestsPath |
+            Select-Object -ExpandProperty Path -First 1)
+    }
+}
+
 $config = [PesterConfiguration]::Default
-$config.Run.Path = $resolvedTestsPath
+$config.Run.Path = $runPaths
 $config.Run.PassThru = $true
 $config.Run.Exit = $false
 $config.Output.Verbosity = 'Detailed'
 $config.TestResult.Enabled = $true
-[string]$repoRoot = Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..') |
-    Select-Object -ExpandProperty Path -First 1
 $config.TestResult.OutputPath = Join-Path $repoRoot 'TestResults.xml'
 $config.TestResult.OutputFormat = 'NUnitXml'
 

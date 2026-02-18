@@ -1,6 +1,11 @@
 #!/bin/sh
 set -e
 
-# Validation runs in commit-msg, where Git provides the commit message file.
-# Keep pre-commit lightweight and deterministic.
-exit 0
+module_hook="modules/GitAliases.Extras/tools/hooks/pre-commit"
+if [ ! -f "$module_hook" ]; then
+  echo "pre-commit: missing '$module_hook'"
+  echo "Initialize submodules: git submodule update --init --recursive"
+  exit 1
+fi
+
+exec sh "$module_hook" "$@"

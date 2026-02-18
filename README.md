@@ -41,6 +41,7 @@ Install local git hooks:
 Installed hooks:
 - `pre-commit` (lightweight no-op)
 - `commit-msg` (runs `tools/ci.ps1`)
+- hook logic is sourced from `modules/GitAliases.Extras/tools/hooks/*` to avoid duplication
 
 Checks are skipped when:
 - commit message contains `[skip precommit hook]` or `[skip pch]`
@@ -75,7 +76,7 @@ P.S. You can also install just [GitAliases.Extras](https://github.com/PhysShell/
 ## What CI checks
 
 - `PSScriptAnalyzer` linting with `PSScriptAnalyzerSettings.psd1`
-- `Pester` tests in `tests\`
+- `Pester` tests in `tests\` plus `modules\GitAliases.Extras\tests\`
 - GitHub Actions matrix on:
   - Windows PowerShell 5.1
   - PowerShell 7
