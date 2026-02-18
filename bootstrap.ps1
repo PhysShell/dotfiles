@@ -10,6 +10,23 @@ function Ensure-GitGlobalConfig([string]$Key, [string]$Value) {
   }
 }
 
+function Ensure-GitSubmodules([string]$RepoRoot) {
+  $gitmodulesPath = Join-Path $RepoRoot '.gitmodules'
+  if (-not (Test-Path -LiteralPath $gitmodulesPath)) {
+    return
+  }
+
+  $null = git -C $RepoRoot submodule sync --recursive
+  if ($LASTEXITCODE -ne 0) {
+    throw "Failed to sync git submodules in '$RepoRoot'."
+  }
+
+  $null = git -C $RepoRoot submodule update --init --recursive
+  if ($LASTEXITCODE -ne 0) {
+    throw "Failed to initialize/update git submodules in '$RepoRoot'."
+  }
+}
+
 # PSReadLine is required for Windows PowerShell 5.1; it's already built into PowerShell Core (pwsh)
 if ($PSVersionTable.PSEdition -ne 'Core') { Ensure-Module PSReadLine ([Version]'2.2.6') }
 
@@ -22,6 +39,9 @@ Ensure-Module git-aliases
 Ensure-GitGlobalConfig 'push.autoSetupRemote' 'true'
 Ensure-GitGlobalConfig 'push.default' 'current'
 Ensure-GitGlobalConfig 'remote.pushDefault' 'origin'
+
+$repoRoot = Resolve-Path -LiteralPath $PSScriptRoot | Select-Object -ExpandProperty Path -First 1
+Ensure-GitSubmodules -RepoRoot $repoRoot
 
 Write-Host "Bootstrap done. Restart PowerShell."
 

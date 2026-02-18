@@ -46,6 +46,30 @@ Checks are skipped when:
 - commit message contains `[skip precommit hook]` or `[skip pch]`
 - there are no working tree changes (for example, `git commit --allow-empty ...`)
 
+## Extract GitAliases.Extras
+
+Recommended approach: keep this as dotfiles repo and move `modules/GitAliases.Extras` to its own repository, then consume it via git submodule at the same path.
+
+Safe migration flow:
+
+1. Run a dry run:
+
+```powershell
+.\tools\migrate-gitaliases-extras.ps1 -SubmoduleUrl 'git@github.com:<you>/GitAliases.Extras.git' -SubmoduleBranch main -PushSplit
+```
+
+2. Apply the migration:
+
+```powershell
+.\tools\migrate-gitaliases-extras.ps1 -SubmoduleUrl 'git@github.com:<you>/GitAliases.Extras.git' -SubmoduleBranch main -PushSplit -Apply
+```
+
+3. Commit resulting changes in this repo (`.gitmodules` + submodule pointer).
+
+Notes:
+- `bootstrap.ps1` now initializes submodules automatically if `.gitmodules` exists.
+- `profile.ps1` warns with the exact `git submodule update --init --recursive` command if submodules were not initialized.
+
 ## What CI checks
 
 - `PSScriptAnalyzer` linting with `PSScriptAnalyzerSettings.psd1`

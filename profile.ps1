@@ -66,8 +66,15 @@ Set-Alias -Name g -Value git -Force
 
 # 3. GitAliases.Extras: Your custom module that DEPENDS on posh-git.
 # It finds all aliases and registers the proxy completer.
+$extrasManifest = Join-Path $dotFilesRoot 'modules\GitAliases.Extras\GitAliases.Extras.psd1'
 if (-not (Get-Module -Name GitAliases.Extras -ErrorAction SilentlyContinue)) {
-  Import-Module GitAliases.Extras -ErrorAction Stop
+  if (Test-Path -LiteralPath $extrasManifest) {
+    Import-Module $extrasManifest -ErrorAction Stop
+  } elseif (Test-Path -LiteralPath (Join-Path $dotFilesRoot '.gitmodules')) {
+    Write-Warning "GitAliases.Extras is missing. Initialize submodules: git -C '$dotFilesRoot' submodule update --init --recursive"
+  } else {
+    Write-Warning "GitAliases.Extras module not found at '$extrasManifest'."
+  }
 }
 
 # Write-Host "PowerShell profile loaded. Posh-git and custom alias completion are active." -ForegroundColor Green
