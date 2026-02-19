@@ -20,7 +20,7 @@ Import-Module Pester -MinimumVersion 5.0 -ErrorAction Stop
 
 $runPaths = @($resolvedTestsPath)
 if (-not $SkipSubmoduleTests) {
-    $submoduleTestsPath = Join-Path $repoRoot 'modules\GitAliases.Extras\tests'
+    $submoduleTestsPath = Join-Path $repoRoot 'modules\git-aliases-extra\tests'
     if (Test-Path -LiteralPath $submoduleTestsPath) {
         $runPaths += (Resolve-Path -LiteralPath $submoduleTestsPath |
             Select-Object -ExpandProperty Path -First 1)

@@ -3,7 +3,7 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$SubmoduleUrl,
     [string]$SubmoduleBranch = 'main',
-    [string]$ModulePath = 'modules/GitAliases.Extras',
+    [string]$ModulePath = 'modules/git-aliases-extra',
     [switch]$PushSplit,
     [switch]$Apply,
     [switch]$AllowDirty
@@ -72,7 +72,7 @@ if ($PushSplit) {
 if (-not $Apply) {
     Write-Host ''
     Write-Host 'Dry run complete. Next command:'
-    Write-Host ("  .\tools\migrate-gitaliases-extras.ps1 -SubmoduleUrl '{0}' -SubmoduleBranch '{1}' -PushSplit -Apply" -f $SubmoduleUrl, $SubmoduleBranch)
+    Write-Host ("  .\tools\migrate-git-aliases-extra.ps1 -SubmoduleUrl '{0}' -SubmoduleBranch '{1}' -PushSplit -Apply" -f $SubmoduleUrl, $SubmoduleBranch)
     Write-Host ''
     Write-Host 'This will:'
     Write-Host ("  1) keep history via subtree split for {0}" -f $ModulePath)
@@ -94,4 +94,4 @@ Write-Host ''
 Write-Host 'Migration completed.'
 Write-Host 'Review and commit:'
 Write-Host '  git status'
-Write-Host "  git commit -m 'Extract GitAliases.Extras to submodule'"
+Write-Host "  git commit -m 'Extract git-aliases-extra to submodule'"

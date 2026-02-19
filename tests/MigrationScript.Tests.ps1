@@ -42,19 +42,19 @@ BeforeAll {
         $tempRoot = Join-Path ([IO.Path]::GetTempPath()) ($Prefix + '-' + [guid]::NewGuid().Guid)
         $repoPath = Join-Path $tempRoot 'repo'
         $toolsPath = Join-Path $repoPath 'tools'
-        $modulePath = Join-Path $repoPath 'modules\GitAliases.Extras'
+        $modulePath = Join-Path $repoPath 'modules\git-aliases-extra'
 
         New-Item -ItemType Directory -Path $toolsPath -Force | Out-Null
         New-Item -ItemType Directory -Path $modulePath -Force | Out-Null
 
-        Copy-Item -Path $script:MigrationScriptSource -Destination (Join-Path $toolsPath 'migrate-gitaliases-extras.ps1') -Force
+        Copy-Item -Path $script:MigrationScriptSource -Destination (Join-Path $toolsPath 'migrate-git-aliases-extra.ps1') -Force
 
         Invoke-GitForMigrationTests -RepoPath $repoPath -Arguments @('init') | Out-Null
         Invoke-GitForMigrationTests -RepoPath $repoPath -Arguments @('config', 'user.email', 'test@example.com') | Out-Null
         Invoke-GitForMigrationTests -RepoPath $repoPath -Arguments @('config', 'user.name', 'Test User') | Out-Null
         Invoke-GitForMigrationTests -RepoPath $repoPath -Arguments @('config', 'commit.gpgsign', 'false') | Out-Null
 
-        Set-Content -Path (Join-Path $modulePath 'GitAliases.Extras.psm1') -Value "function gsw { 'ok' }" -NoNewline -Encoding ascii
+        Set-Content -Path (Join-Path $modulePath 'git-aliases-extra.psm1') -Value "function gsw { 'ok' }" -NoNewline -Encoding ascii
         Invoke-GitForMigrationTests -RepoPath $repoPath -Arguments @('add', '.') | Out-Null
         Invoke-GitForMigrationTests -RepoPath $repoPath -Arguments @('commit', '-m', 'init module') | Out-Null
 
@@ -66,16 +66,16 @@ BeforeAll {
 
     [string]$script:RepoRoot = Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..') |
         Select-Object -ExpandProperty Path -First 1
-    $script:MigrationScriptSource = Join-Path $script:RepoRoot 'tools\migrate-gitaliases-extras.ps1'
+    $script:MigrationScriptSource = Join-Path $script:RepoRoot 'tools\migrate-git-aliases-extra.ps1'
 }
 
-Describe 'migrate-gitaliases-extras script' {
+Describe 'migrate-git-aliases-extra script' {
     It 'dry run succeeds and does not modify repository layout' -Skip:(-not (Get-Command git -ErrorAction SilentlyContinue)) {
         $context = New-MigrationTestRepository -Prefix 'migration-dry-run'
         try {
             Push-Location $context.RepoPath
             try {
-                $output = & pwsh -NoProfile -File '.\tools\migrate-gitaliases-extras.ps1' -SubmoduleUrl 'git@github.com:example/GitAliases.Extras.git' 2>&1
+                $output = & pwsh -NoProfile -File '.\tools\migrate-git-aliases-extra.ps1' -SubmoduleUrl 'git@github.com:example/git-aliases-extra.git' 2>&1
                 $exitCode = $LASTEXITCODE
             } finally {
                 Pop-Location
@@ -83,7 +83,7 @@ Describe 'migrate-gitaliases-extras script' {
 
             $exitCode | Should -Be 0
             (($output | Out-String) -match 'Dry run complete') | Should -BeTrue
-            (Test-Path -LiteralPath (Join-Path $context.RepoPath 'modules\GitAliases.Extras\GitAliases.Extras.psm1')) | Should -BeTrue
+            (Test-Path -LiteralPath (Join-Path $context.RepoPath 'modules\git-aliases-extra\git-aliases-extra.psm1')) | Should -BeTrue
             (Test-Path -LiteralPath (Join-Path $context.RepoPath '.gitmodules')) | Should -BeFalse
         } finally {
             if (Test-Path -LiteralPath $context.TempRoot) {
@@ -99,7 +99,7 @@ Describe 'migrate-gitaliases-extras script' {
 
             Push-Location $context.RepoPath
             try {
-                $output = & pwsh -NoProfile -File '.\tools\migrate-gitaliases-extras.ps1' -SubmoduleUrl 'git@github.com:example/GitAliases.Extras.git' 2>&1
+                $output = & pwsh -NoProfile -File '.\tools\migrate-git-aliases-extra.ps1' -SubmoduleUrl 'git@github.com:example/git-aliases-extra.git' 2>&1
                 $exitCode = $LASTEXITCODE
             } finally {
                 Pop-Location

@@ -1,4 +1,4 @@
-[submodule "modules/GitAliases.Extras"]
-	path = modules/GitAliases.Extras
-	url = git@github.com:PhysShell/GitAliases.Extras.git
+[submodule "modules/git-aliases-extra"]
+	path = modules/git-aliases-extra
+	url = git@github.com:PhysShell/git-aliases-extra.git
 	branch = main

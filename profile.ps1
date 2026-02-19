@@ -41,7 +41,7 @@ if (Get-Module -ListAvailable -Name PSReadLine) {
 }
 
 # --- Add your custom modules directory to the PSModulePath ---
-# This ensures PowerShell can find your 'GitAliases.Extras' module.
+# This ensures PowerShell can find your 'git-aliases-extra' module.
 $dotFilesRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $dotModules = Join-Path $dotFilesRoot 'modules'
 $sep = [IO.Path]::PathSeparator
@@ -64,16 +64,16 @@ if (Get-Command g -CommandType Function -ErrorAction SilentlyContinue) {
 }
 Set-Alias -Name g -Value git -Force
 
-# 3. GitAliases.Extras: Your custom module that DEPENDS on posh-git.
+# 3. git-aliases-extra: Your custom module that DEPENDS on posh-git.
 # It finds all aliases and registers the proxy completer.
-$extrasManifest = Join-Path $dotFilesRoot 'modules\GitAliases.Extras\GitAliases.Extras.psd1'
-if (-not (Get-Module -Name GitAliases.Extras -ErrorAction SilentlyContinue)) {
+$extrasManifest = Join-Path $dotFilesRoot 'modules\git-aliases-extra\git-aliases-extra.psd1'
+if (-not (Get-Module -Name git-aliases-extra -ErrorAction SilentlyContinue)) {
   if (Test-Path -LiteralPath $extrasManifest) {
-    Import-Module $extrasManifest -ErrorAction Stop
+    Import-Module $extrasManifest -DisableNameChecking -ErrorAction Stop
   } elseif (Test-Path -LiteralPath (Join-Path $dotFilesRoot '.gitmodules')) {
-    Write-Warning "GitAliases.Extras is missing. Initialize submodules: git -C '$dotFilesRoot' submodule update --init --recursive"
+    Write-Warning "git-aliases-extra is missing. Initialize submodules: git -C '$dotFilesRoot' submodule update --init --recursive"
   } else {
-    Write-Warning "GitAliases.Extras module not found at '$extrasManifest'."
+    Write-Warning "git-aliases-extra module not found at '$extrasManifest'."
   }
 }
 
