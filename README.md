@@ -94,3 +94,7 @@ P.S. You can also install just [git-aliases-extra](https://github.com/PhysShell/
 - GitHub Actions matrix on:
   - Windows PowerShell 5.1
   - PowerShell 7
+
+## License
+
+WTFPL. See `LICENSE`.
