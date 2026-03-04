@@ -75,8 +75,14 @@ Describe 'migrate-git-aliases-extra script' {
         try {
             Push-Location $context.RepoPath
             try {
-                $output = & pwsh -NoProfile -File '.\tools\migrate-git-aliases-extra.ps1' -SubmoduleUrl 'git@github.com:example/git-aliases-extra.git' 2>&1
-                $exitCode = $LASTEXITCODE
+                $previousPreference = $ErrorActionPreference
+                $ErrorActionPreference = 'Continue'
+                try {
+                    $output = & pwsh -NoProfile -File '.\tools\migrate-git-aliases-extra.ps1' -SubmoduleUrl 'git@github.com:example/git-aliases-extra.git' 2>&1
+                    $exitCode = $LASTEXITCODE
+                } finally {
+                    $ErrorActionPreference = $previousPreference
+                }
             } finally {
                 Pop-Location
             }
@@ -99,8 +105,14 @@ Describe 'migrate-git-aliases-extra script' {
 
             Push-Location $context.RepoPath
             try {
-                $output = & pwsh -NoProfile -File '.\tools\migrate-git-aliases-extra.ps1' -SubmoduleUrl 'git@github.com:example/git-aliases-extra.git' 2>&1
-                $exitCode = $LASTEXITCODE
+                $previousPreference = $ErrorActionPreference
+                $ErrorActionPreference = 'Continue'
+                try {
+                    $output = & pwsh -NoProfile -File '.\tools\migrate-git-aliases-extra.ps1' -SubmoduleUrl 'git@github.com:example/git-aliases-extra.git' 2>&1
+                    $exitCode = $LASTEXITCODE
+                } finally {
+                    $ErrorActionPreference = $previousPreference
+                }
             } finally {
                 Pop-Location
             }

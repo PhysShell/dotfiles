@@ -61,6 +61,27 @@ Checks are skipped when:
 - commit message contains `[skip precommit hook]` or `[skip pch]`
 - there are no working tree changes (for example, `git commit --allow-empty ...`)
 
+## Submodule release helper
+
+Use fail-fast release helper for `modules/git-aliases-extra`:
+
+```powershell
+.\tools\release-submodule.ps1 -Version 0.1.5
+```
+
+What it does:
+- runs strict preflight checks before any write/push action;
+- optionally runs submodule tests (enabled by default);
+- commits submodule changes, creates/pushes `v<version>` tag;
+- stages + commits updated submodule pointer in root repo and pushes it.
+
+Useful options:
+- skip tests: `-SkipTests`
+- custom remotes: `-SubmoduleRemote upstream -RootRemote origin`
+- custom commit messages:
+  - `-SubmoduleCommitMessage "..."`
+  - `-RootCommitMessage "..."`
+
 ## Extract git-aliases-extra
 
 Recommended approach: keep this as dotfiles repo and move `modules/git-aliases-extra` to its own repository, then consume it via git submodule at the same path.

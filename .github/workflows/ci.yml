@@ -13,9 +13,9 @@ jobs:
       matrix:
         include:
           - label: Windows PowerShell 5.1
-            shell: powershell
+            ps_exe: powershell
           - label: PowerShell 7
-            shell: pwsh
+            ps_exe: pwsh
 
     steps:
       - name: Checkout
@@ -24,13 +24,16 @@ jobs:
           submodules: recursive
 
       - name: Show PowerShell Version
-        shell: ${{ matrix.shell }}
+        shell: pwsh
         run: |
-          $PSVersionTable.PSVersion.ToString()
+          $exe = '${{ matrix.ps_exe }}'
+          & $exe -NoProfile -Command '$PSVersionTable.PSVersion.ToString()'
 
       - name: Install Dependencies
-        shell: ${{ matrix.shell }}
+        shell: pwsh
         run: |
+          $exe = '${{ matrix.ps_exe }}'
+          $installScript = @'
           if ($PSVersionTable.PSEdition -eq 'Desktop') {
             [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
             $userModules = Join-Path $HOME 'Documents\WindowsPowerShell\Modules'
@@ -43,8 +46,11 @@ jobs:
           Set-PSRepository PSGallery -InstallationPolicy Trusted
           Install-Module PSScriptAnalyzer -Scope CurrentUser -Force -AllowClobber
           Install-Module Pester -Scope CurrentUser -Force -SkipPublisherCheck
+          '@
+          & $exe -NoProfile -Command $installScript
 
       - name: Run Lint and Tests
-        shell: ${{ matrix.shell }}
+        shell: pwsh
         run: |
-          ./tools/ci.ps1
+          $exe = '${{ matrix.ps_exe }}'
+          & $exe -NoProfile -File .\tools\ci.ps1 -CurrentShellOnly
