@@ -179,7 +179,7 @@ if ($submoduleRemoteProbe.ExitCode -ne 0) {
     $issues.Add("Submodule remote '$SubmoduleRemote' does not exist in '$submoduleFullPath'.")
 }
 
-$rootStatusPaths = Get-StatusPaths -RepoPath $repoRoot
+$rootStatusPaths = @(Get-StatusPaths -RepoPath $repoRoot)
 $unexpectedRootChanges = @($rootStatusPaths | Where-Object { $_ -ne $submoduleRelativePath })
 if ($unexpectedRootChanges.Count -gt 0) {
     $issues.Add(
@@ -254,7 +254,7 @@ if (-not $SkipTests) {
     & $submoduleTestsPath -CurrentShellOnly
 }
 
-$submoduleStatusBefore = Get-StatusPaths -RepoPath $submoduleFullPath
+$submoduleStatusBefore = @(Get-StatusPaths -RepoPath $submoduleFullPath)
 $submoduleHadChanges = $submoduleStatusBefore.Count -gt 0
 
 if ($submoduleHadChanges) {
