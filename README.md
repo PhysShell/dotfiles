@@ -116,6 +116,26 @@ P.S. You can also install just [git-aliases-extra](https://github.com/PhysShell/
   - Windows PowerShell 5.1
   - PowerShell 7
 
+## VSCode utils (vscode_stuff directory)
+
+1. copy_xpath.ps1 - copies XPath for XML element under cursor
+    - Example:
+    ```xml
+    <Root>
+        <P1>
+            <P2>
+                <P3>
+                    <TargetElementName id="x">hello</TargetElementName>
+                </P3>
+            </P2>
+        </P1>
+    </Root>
+    ```
+    - Suppose cursor is on TargetElementName
+    - Gives Root->P1->P2->P3->TargetElementName
+    - See copy_xpath.ps1 for example of setting up tasks.json & keybindings.json
+    - P.S although there's some extensions that already provide described functionality I didn't want to use extensions for that specific purpose alone
+
 ## License
 
 WTFPL. See `LICENSE`.
