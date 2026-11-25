@@ -46,6 +46,8 @@ jobs:
           Set-PSRepository PSGallery -InstallationPolicy Trusted
           Install-Module PSScriptAnalyzer -Scope CurrentUser -Force -AllowClobber
           Install-Module Pester -Scope CurrentUser -Force -SkipPublisherCheck
+          Install-Module posh-git -Scope CurrentUser -Force
+          Install-Module git-aliases -Scope CurrentUser -Force
           '@
           & $exe -NoProfile -Command $installScript
 
