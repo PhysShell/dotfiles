@@ -136,6 +136,12 @@ P.S. You can also install just [git-aliases-extra](https://github.com/PhysShell/
     - See copy_xpath.ps1 for example of setting up tasks.json & keybindings.json
     - P.S although there's some extensions that already provide described functionality I didn't want to use extensions for that specific purpose alone
 
+## Userscripts (userscripts directory)
+
+Tampermonkey scripts. To install one, open its raw URL in the browser; Tampermonkey shows the install page and later pulls updates from the same URL when `@version` is bumped.
+
+1. [github-hide-starred.user.js](https://raw.githubusercontent.com/PhysShell/dotfiles/main/userscripts/github-hide-starred.user.js) - on other people's GitHub profiles hides repositories already in your stars (Stars and Repositories tabs, star lists, pinned) and goes to the next page when the whole page is hidden
+
 ## License
 
 WTFPL. See `LICENSE`.
