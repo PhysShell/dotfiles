@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GitHub: скрыть репозитории, которые уже у меня в звёздах
 // @namespace    local.hide-starred
-// @version      1.3
+// @version      1.4
 // @match        https://github.com/*
 // @grant        none
 // @run-at       document-idle
@@ -19,7 +19,16 @@
   let lastCount = -1;
   let lastAutoHref = null;
 
+  function isOwnPage() {
+    const me = document.querySelector('meta[name="user-login"]')?.content;
+    if (!me) return false;
+    const parts = location.pathname.split('/').filter(Boolean);
+    const owner = parts[0] === 'stars' ? parts[1] : parts[0];
+    return !!owner && owner.toLowerCase() === me.toLowerCase();
+  }
+
   function scan() {
+    if (isOwnPage()) { updateButton(0); return; }
     let count = 0;
     document.querySelectorAll('.starring-container').forEach(c => {
       const row = c.closest(ROW);
