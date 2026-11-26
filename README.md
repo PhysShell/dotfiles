@@ -142,6 +142,22 @@ Tampermonkey scripts. To install one, open its raw URL in the browser; Tampermon
 
 1. [github-hide-starred.user.js](https://raw.githubusercontent.com/PhysShell/dotfiles/main/userscripts/github-hide-starred.user.js) - on other people's GitHub profiles hides repositories already in your stars (Stars and Repositories tabs, star lists, pinned) and goes to the next page when the whole page is hidden
 
+## Edge tab recovery (edge-restore directory)
+
+Brings back Edge windows and tabs after a power loss or crash when Edge opens with a single empty tab. Needs Python 3 on `PATH`; works with the `Default` Edge profile.
+
+- `Restore-EdgeTabs.ps1` - reopens every window of the last session that was written before the running Edge started, each window with its tabs in order. `-List` only prints them, `-SessionFile <path>` picks a specific file (a live `Sessions\Session_*` or a backup).
+- `Backup-EdgeSessions.ps1` - copies the current session file to `%LOCALAPPDATA%\EdgeSessionBackups\<timestamp>\`, skips unchanged files, keeps the last 48 copies.
+- `Install-EdgeSessionBackup.ps1` - registers the `EdgeSessionBackup` scheduled task that runs the backup at logon and every 10 minutes without a console window. `-Uninstall` removes it.
+
+```powershell
+.\edge-restore\Install-EdgeSessionBackup.ps1
+.\edge-restore\Restore-EdgeTabs.ps1 -List
+.\edge-restore\Restore-EdgeTabs.ps1
+```
+
+Only the current page of each tab is restored, not its back/forward history.
+
 ## License
 
 WTFPL. See `LICENSE`.
